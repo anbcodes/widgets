@@ -11,28 +11,41 @@
         let $main = document.body
 
         function widget(btnName, inputtype, base, run) {
-            let d = document.createElement; let a = document.createElement(inputtype)
+            let ta = document.createElement(inputtype)
             let btn = document.createElement('button')
             let out = document.createElement('p')
             base.appendChild(ta)
             base.appendChild(btn)
             base.appendChild(out)
             btn.innerText = btnName
-            btn.addEventListener('click', (...args) => { out.innerHTML = run(ta.value, ...args) })
+            btn.addEventListener('click', async (...args) => { out.innerHTML = await run(ta.value, ...args) })
         }
 
-        const builtinsP = async () => {
+        const builtinsP = (async () => {
             let res = await fetch('./builtins.js')
             let text = await res.text()
-            eval("let funcs = {v:`" + text.replace(/\/\/--(.*)/g, '`,"$1":`') + '`}')
+            let funcs = {}
+            console.log("funcs = {v:`" + text.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/\/\/--(.*)/g, '`,"$1":`') + '`}');
+            eval("funcs = {v:`" + text.replace(/`/g, '\\`').replace(/\$/g, '\\$').replace(/\/\/--(.*)/g, '`,"$1":`') + '`}')
             return funcs
-        }
+        })()
 
-        widget('add', 'input', document.body, async (value) => {
-            const builtins = await builtinsP
-            let value = builtins[atob(value)] | LZString.decompress(atob(value));
-            eval(value)
-        })
+        const add = async (v) => {
+                const builtins = await builtinsP
+                console.log('GOT: ', v, v, builtins[v])
+                let value = builtins[v] || LZString.decompressFromBase64(v);
+                console.log('EVAL:', value)
+                eval(value)
+                return ''
+            }
+
+        let params = new URLSearchParams(location.search);
+        let toAdd = (params.get('i') || '').split(',')
+        toAdd.forEach((v) => add(v));
+
+        if (!params.get('hide')) {
+            widget('add', 'input', document.body, add)
+        }
     </script>
 </body>
 </html>
