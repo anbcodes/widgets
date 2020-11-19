@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widgets</title>
+</head>
+<body>
+    <script src="lz-string.js"></script>
+    <script>
+        let $main = document.body
+
+        function widget(btnName, inputtype, base, run) {
+            let d = document.createElement; let a = document.createElement(inputtype)
+            let btn = document.createElement('button')
+            let out = document.createElement('p')
+            base.appendChild(ta)
+            base.appendChild(btn)
+            base.appendChild(out)
+            btn.innerText = btnName
+            btn.addEventListener('click', (...args) => { out.innerHTML = run(ta.value, ...args) })
+        }
+
+        const builtinsP = async () => {
+            let res = await fetch('./builtins.js')
+            let text = await res.text()
+            eval("let funcs = {v:`" + text.replace(/\/\/--(.*)/g, '`,"$1":`') + '`}')
+            return funcs
+        }
+
+        widget('add', 'input', document.body, async (value) => {
+            const builtins = await builtinsP
+            let value = builtins[atob(value)] | LZString.decompress(atob(value));
+            eval(value)
+        })
+    </script>
+</body>
+</html>
